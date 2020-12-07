@@ -1,3 +1,0 @@
-输入 msg_test运行消息队列测试程序
-
-消息队列实现在文件messagequeue.c，测试代码为msg_test.c
