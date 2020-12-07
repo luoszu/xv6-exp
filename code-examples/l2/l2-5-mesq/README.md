@@ -1,0 +1,3 @@
+消息队列的实现文件为messagequeue.c
+
+测试程序为msg_test.c
