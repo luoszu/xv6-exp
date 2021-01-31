@@ -7,12 +7,6 @@
 #include "proc.h"
 #include "spinlock.h"
 
-
-
-
-
-
-
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -52,7 +46,8 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->priority = 10;
+  p->priority = 10 ;
+
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
     p->state = UNUSED;
@@ -169,7 +164,6 @@ fork(void)
 
   safestrcpy(np->name, proc->name, sizeof(proc->name));
 
-
   pid = np->pid;
 
   np->state = RUNNABLE;
@@ -275,30 +269,40 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-
 void
 scheduler(void)
 {
-  struct proc *p;
-  int proc_num,last_proc_num, prio;
+  struct proc *p,*temp;
+  int priority;
 
-  last_proc_num=0;
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-  for( prio=0;prio<20;prio++)
-  {
-      for(proc_num=0;proc_num<NPROC;proc_num++){              //扫描所有进程
-        p=ptable.proc+((last_proc_num+1+proc_num) % NPROC);
-        if(p->state != RUNNABLE)
-        continue;
-        if(p->priority!=prio)
-        continue;
 
-        last_proc_num=(last_proc_num+1+proc_num) % NPROC;      //下一次扫描起点
+    priority = 19;
+
+     for(temp  = ptable.proc; temp < &ptable.proc[NPROC]; temp++) //获取当前可运行的最高当前优先级
+    {
+      if(temp->state == RUNNABLE&&temp->priority < priority)
+        priority = temp->priority;
+    }
+
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if(p->state != RUNNABLE)
+        continue;      
+      if(p->priority > priority)
+        continue;
+      else
+      {
+         priority = p->priority ;
+      }
+
 
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
@@ -313,11 +317,11 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         proc = 0;
       }//endif for proc_num
-    }//endif for prio
+
     release(&ptable.lock);
+
   }
 }
-
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -484,7 +488,7 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    cprintf("\nPID=%d state= %s prio=%d  %s : ", p->pid, state , p->priority , p->name);
+    cprintf("\nPID=%d state=%s prio=%d %s :", p->pid, state,p->priority, p->name);
     if(p->state == SLEEPING){
       getcallerpcs((uint*)p->context->ebp+2, pc);
       for(i=0; i<10 && pc[i] != 0; i++)
@@ -492,7 +496,6 @@ procdump(void)
     }
     cprintf("\n");
   }
-
 }
 
 int
@@ -508,3 +511,4 @@ chpri( int pid, int priority ) {
   release(&ptable.lock);
   return pid;
 }
+
