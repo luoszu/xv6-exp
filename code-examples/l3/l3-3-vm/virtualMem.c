@@ -42,5 +42,5 @@ main(void)
         sbrk(4096)[1] = 1;//把物理页分配出去，为实验做准备
     bstat();
     mem();
-    return 0;
+    exit();
 }
